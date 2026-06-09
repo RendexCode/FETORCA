@@ -984,7 +984,11 @@
 
             applyFiltersAndRender();
           } catch (err) {
-            showToast(`Error al crear: ${err.message}`, 'error');
+            if (err.code === '23505') {
+              showToast(`No se guardó el producto porque el código "${product.codigo}" ya está registrado por otra PC.`, 'error');
+            } else {
+              showToast(`Error al crear: ${err.message}`, 'error');
+            }
           }
         } else {
           showToast('Código y Descripción requeridos para guardar en la base de datos', 'info');
@@ -1027,7 +1031,11 @@
             }
           }
         } catch (err) {
-          showToast(`Error al guardar: ${err.message}`, 'error');
+          if (err.code === '23505') {
+            showToast(`No se guardó el cambio porque el código "${newValue}" ya está registrado por otra PC.`, 'error');
+          } else {
+            showToast(`Error al guardar: ${err.message}`, 'error');
+          }
           product[field] = oldValue;
           inputElement.value = field === 'costo' || field === 'precio' ? parseFloat(oldValue || 0).toFixed(2) : oldValue;
         }
