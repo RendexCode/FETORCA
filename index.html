@@ -857,6 +857,54 @@
     function setupEventListeners() {
       // Inputs
       searchInput.addEventListener('input', () => { applyFiltersAndRender(); });
+      
+      // Enter on search box detects missing code from scan and prompts insertion
+      searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const queryCode = searchInput.value.trim();
+          if (!queryCode) return;
+
+          const exists = products.some(p => p.codigo && p.codigo.trim().toLowerCase() === queryCode.toLowerCase());
+          
+          if (!exists) {
+            e.preventDefault();
+            if (confirm(`El código "${queryCode}" no está registrado. ¿Desea agregar una nueva fila con este código?`)) {
+              searchInput.value = '';
+              
+              if (activeTab !== 'faltantes') {
+                activeTab = 'faltantes';
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.getElementById('tabFaltantes').classList.add('active');
+              }
+
+              tempIdCounter++;
+              const tempId = `_temp_${tempIdCounter}_${Date.now()}`;
+              const newRow = {
+                codigo: queryCode,
+                descripcion: '',
+                proveedor: '',
+                costo: 0,
+                precio: 0,
+                existencia: 0,
+                pedido: false,
+                isNew: true,
+                tempId: tempId
+              };
+
+              products.unshift(newRow);
+              applyFiltersAndRender();
+
+              setTimeout(() => {
+                const descInput = document.querySelector(`tr[data-code="${tempId}"] input[data-field="descripcion"]`);
+                if (descInput) descInput.focus();
+              }, 50);
+
+              showToast('Fila creada con el código escaneado', 'success');
+            }
+          }
+        }
+      });
+
       stockFilter.addEventListener('change', () => { applyFiltersAndRender(); });
       sortSelect.addEventListener('change', () => { applyFiltersAndRender(); });
 
