@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FETORCA - Control de Inventario</title>
-  <!-- Supabase JS Client (CDN) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+  <!-- System Fonts (No network delay) -->
   <style>
     /* CSS Palette - Solid Spreadsheet Style (Light Only) */
     :root {
@@ -288,32 +286,21 @@
       padding-bottom: 0.4rem;
     }
 
-    .card-title-input {
-      width: 100%;
+    .card-title {
       font-weight: 600;
-      border: 1px solid transparent;
-      padding: 2px;
-      outline: none;
       font-size: 0.95rem;
+      color: var(--text-main);
     }
 
-    .card-title-input:focus {
-      border-color: var(--primary);
-      background: #ffffff;
-    }
-
-    .card-code-input {
+    .card-code {
       font-family: monospace;
       font-size: 0.8rem;
-      width: 120px;
-      border: 1px solid transparent;
-      padding: 2px;
-      outline: none;
-    }
-
-    .card-code-input:focus {
-      border-color: var(--primary);
-      background: #ffffff;
+      color: var(--text-muted);
+      background: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 2px;
+      display: inline-block;
+      margin-top: 4px;
     }
 
     .card-body-grid {
@@ -335,30 +322,14 @@
       font-weight: 600;
     }
 
-    .card-field input {
-      padding: 0.3rem 0.5rem;
-      background: #ffffff;
-      border: 1px solid var(--border-color);
-      color: var(--text-main);
+    .card-field-val {
       font-size: 0.85rem;
-      outline: none;
-      border-radius: 2px;
-    }
-
-    .card-field input:focus {
-      border-color: var(--primary);
+      color: var(--text-main);
+      padding: 2px 0;
     }
 
     .card-field-full {
       grid-column: span 2;
-    }
-
-    .card-actions {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 0.25rem;
-      border-top: 1px solid var(--border-color);
-      padding-top: 0.4rem;
     }
 
     /* Footer & Pagination */
@@ -490,6 +461,9 @@
       }
       .mobile-cards-view {
         display: flex;
+      }
+      #addEmptyRowBtn {
+        display: none !important;
       }
       header {
         flex-direction: column;
@@ -820,8 +794,7 @@
         applyFiltersAndRender();
         
         setTimeout(() => {
-          const firstInput = document.querySelector(`tr[data-code="${tempId}"] input[data-field="codigo"]`) ||
-                             document.querySelector(`.product-card[data-code="${tempId}"] input[data-field="codigo"]`);
+          const firstInput = document.querySelector(`tr[data-code="${tempId}"] input[data-field="codigo"]`);
           if (firstInput) firstInput.focus();
         }, 50);
 
@@ -834,16 +807,9 @@
           handleInputChange(e.target);
         }
       });
-
-      // Event Delegation for Mobile Card inputs
-      cardsBody.addEventListener('change', (e) => {
-        if (e.target.classList.contains('cell-input')) {
-          handleInputChange(e.target);
-        }
-      });
     }
 
-    // Handle Input Changes and Save to Supabase
+    // Handle Input Changes and Save to Supabase (Desktop only)
     async function handleInputChange(inputElement) {
       const field = inputElement.dataset.field;
       const currentKey = inputElement.dataset.code;
@@ -961,10 +927,6 @@
             const row = document.querySelector(`tr[data-code="${product.codigo}"]`);
             if (row) {
               row.className = newValue === 0 ? 'row-faltante' : newValue <= 5 ? 'row-bajo-stock' : 'row-normal';
-            }
-            const card = document.querySelector(`.product-card[data-code="${product.codigo}"]`);
-            if (card) {
-              card.style = newValue === 0 ? 'border-left: 4px solid var(--danger);' : newValue <= 5 ? 'border-left: 4px solid var(--warning);' : '';
             }
           }
         } catch (err) {
@@ -1109,7 +1071,7 @@
       tableBody.appendChild(fragment);
     }
 
-    // Render Mobile Cards View
+    // Render Mobile Cards View (READ-ONLY, NO BUTTONS OR INPUTS)
     function renderMobileCards(items) {
       cardsBody.innerHTML = '';
       
@@ -1121,50 +1083,51 @@
       const fragment = document.createDocumentFragment();
 
       items.forEach(p => {
-        const key = p.codigo || p.tempId;
         const existence = parseFloat(p.existencia);
+        let badgeClass = 'badge-success';
+        let badgeText = 'Normal';
         let cardBorder = '';
 
         if (existence === 0) {
+          badgeClass = 'badge-danger';
+          badgeText = 'Faltante';
           cardBorder = 'border-left: 4px solid var(--danger);';
         } else if (existence <= 5) {
+          badgeClass = 'badge-warning';
+          badgeText = 'Bajo Stock';
           cardBorder = 'border-left: 4px solid var(--warning);';
         }
 
         const div = document.createElement('div');
         div.className = 'product-card';
-        div.setAttribute('data-code', key);
+        div.setAttribute('data-code', p.codigo || p.tempId);
         if (cardBorder) div.style = cardBorder;
 
         div.innerHTML = `
           <div class="card-header">
-            <div style="width: 100%;">
-              <input type="text" class="card-title-input cell-input" data-field="descripcion" data-code="${key}" value="${p.descripcion}" placeholder="Nombre / Descripción *">
-              <input type="text" class="card-code-input cell-input" data-field="codigo" data-code="${key}" value="${p.codigo}" placeholder="Código *">
+            <div>
+              <div class="card-title">${p.descripcion || '<span style="color: var(--text-muted); font-style: italic;">Sin nombre</span>'}</div>
+              <span class="card-code">${p.codigo || 'Fila Nueva'}</span>
             </div>
+            <span class="badge ${badgeClass}">${badgeText} (${p.existencia})</span>
           </div>
           <div class="card-body-grid">
             <div class="card-field card-field-full">
               <label>Proveedor</label>
-              <input type="text" class="cell-input" data-field="proveedor" data-code="${key}" value="${p.proveedor || ''}" placeholder="Escribe proveedor...">
+              <span class="card-field-val">${p.proveedor || '<span style="color: var(--text-muted); font-style: italic;">Sin asignar</span>'}</span>
             </div>
             <div class="card-field">
               <label>Costo ($)</label>
-              <input type="number" step="0.01" class="cell-input" data-field="costo" data-code="${key}" value="${parseFloat(p.costo || 0).toFixed(2)}">
+              <span class="card-field-val numeric-val">${parseFloat(p.costo || 0).toFixed(2)}</span>
             </div>
             <div class="card-field">
               <label>Precio ($)</label>
-              <input type="number" step="0.01" class="cell-input" data-field="precio" data-code="${key}" value="${parseFloat(p.precio || 0).toFixed(2)}">
+              <span class="card-field-val numeric-val">${parseFloat(p.precio || 0).toFixed(2)}</span>
             </div>
             <div class="card-field card-field-full">
               <label>Existencia (Cantidad)</label>
-              <input type="number" step="1" class="cell-input" data-field="existencia" data-code="${key}" value="${p.existencia}">
+              <span class="card-field-val numeric-val" style="font-weight: 600;">${p.existencia}</span>
             </div>
-          </div>
-          <div class="card-actions">
-            <button class="delete-btn" style="color: var(--danger); gap: 4px; justify-content: flex-end;" onclick="confirmDelete('${p.codigo}', '${p.descripcion}', '${p.tempId || ''}')">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg> Eliminar fila
-            </button>
           </div>
         `;
 
@@ -1174,7 +1137,7 @@
       cardsBody.appendChild(fragment);
     }
 
-    // Delete confirm and execution
+    // Delete confirm and execution (Desktop only)
     function confirmDelete(code, desc, tempId) {
       const displayDesc = desc || '(Producto nuevo sin guardar)';
       if (confirm(`¿Está seguro de que desea eliminar la fila del producto "${displayDesc}"?`)) {
@@ -1239,6 +1202,7 @@
       });
     }
 
+    // Close toast helper
     function closeToast(toast) {
       if (toast.parentNode) {
         toast.parentNode.removeChild(toast);
