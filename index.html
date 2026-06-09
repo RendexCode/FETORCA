@@ -95,11 +95,10 @@
       background: var(--panel-bg);
       border: 1px solid var(--border-color);
       border-radius: 12px;
-      padding: 0.75rem 1.25rem;
-      display: grid;
-      grid-template-columns: 2fr 1fr 1fr auto;
-      gap: 1rem;
-      align-items: center;
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
       box-shadow: var(--shadow-sm);
     }
 
@@ -115,6 +114,7 @@
       font-weight: 600;
       color: var(--text-muted);
       white-space: nowrap;
+      width: 60px;
     }
 
     /* Styled Search Box */
@@ -458,50 +458,7 @@
       font-weight: 500;
     }
 
-    /* Footer & Pagination - Floating Panel */
-    .pagination-bar {
-      background: var(--panel-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 0.75rem 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .pagination-info {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    .pagination-buttons {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .page-btn {
-      background: #ffffff;
-      border: 1px solid #cbd5e1;
-      color: var(--text-main);
-      padding: 0.4rem 0.8rem;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 500;
-    }
-
-    .page-btn:hover:not(:disabled) {
-      border-color: var(--primary);
-      background: #f8fafc;
-    }
-
-    .page-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
+    /* Removed pagination bar styles */
 
     /* Toasts/Alerts System */
     .toast-container {
@@ -584,18 +541,6 @@
     }
 
     /* RESPONSIVE MEDIA QUERIES */
-    @media (max-width: 1024px) {
-      .toolbar {
-        grid-template-columns: 1fr 1fr;
-      }
-      .toolbar-group:first-child {
-        grid-column: span 2;
-      }
-      #resetFiltersBtn {
-        grid-column: span 2;
-      }
-    }
-
     @media (max-width: 767px) {
       body {
         padding: 0.75rem;
@@ -614,24 +559,13 @@
         gap: 0.5rem;
         text-align: center;
       }
-      .toolbar {
-        grid-template-columns: 1fr;
-        padding: 1rem;
-      }
       .toolbar-group {
         flex-direction: column;
         align-items: stretch;
       }
       .toolbar-group label {
         margin-bottom: 2px;
-      }
-      #resetFiltersBtn {
-        grid-column: span 1 !important;
-      }
-      .pagination-bar {
-        flex-direction: column;
-        gap: 0.75rem;
-        text-align: center;
+        width: auto;
       }
     }
   </style>
@@ -702,11 +636,6 @@
           </select>
         </div>
       </div>
-
-      <!-- Quick Reset Button -->
-      <button id="resetFiltersBtn" class="btn btn-danger" title="Limpiar Filtros">
-        Restablecer
-      </button>
     </section>
 
     <!-- Content Grid Area -->
@@ -739,18 +668,6 @@
 
     </main>
 
-    <!-- Pagination & Status Bar -->
-    <footer class="pagination-bar">
-      <div class="pagination-info" id="paginationInfo">
-        Mostrando 0 - 0 de 0 productos
-      </div>
-      <div class="pagination-buttons">
-        <button id="prevPageBtn" class="page-btn" disabled>Anterior</button>
-        <span id="currentPageNum" style="font-weight: 600; margin: 0 0.5rem; font-size: 0.85rem;">Página 1</span>
-        <button id="nextPageBtn" class="page-btn" disabled>Siguiente</button>
-      </div>
-    </footer>
-
   </div>
 
   <!-- Toast Notification Container -->
@@ -768,8 +685,6 @@
     // App State
     let products = [];
     let filteredProducts = [];
-    let currentPage = 1;
-    const pageSize = 50;
     let tempIdCounter = 0;
 
     // DOM Elements
@@ -782,13 +697,6 @@
     const searchInput = document.getElementById('searchInput');
     const stockFilter = document.getElementById('stockFilter');
     const sortSelect = document.getElementById('sortSelect');
-    const resetFiltersBtn = document.getElementById('resetFiltersBtn');
-    
-    // Pagination Elements
-    const prevPageBtn = document.getElementById('prevPageBtn');
-    const nextPageBtn = document.getElementById('nextPageBtn');
-    const currentPageNum = document.getElementById('currentPageNum');
-    const paginationInfo = document.getElementById('paginationInfo');
 
     // Add Empty Row Button
     const addEmptyRowBtn = document.getElementById('addEmptyRowBtn');
@@ -895,35 +803,9 @@
     // Event Listeners setup
     function setupEventListeners() {
       // Inputs
-      searchInput.addEventListener('input', () => { currentPage = 1; applyFiltersAndRender(); });
-      stockFilter.addEventListener('change', () => { currentPage = 1; applyFiltersAndRender(); });
+      searchInput.addEventListener('input', () => { applyFiltersAndRender(); });
+      stockFilter.addEventListener('change', () => { applyFiltersAndRender(); });
       sortSelect.addEventListener('change', () => { applyFiltersAndRender(); });
-      
-      // Reset
-      resetFiltersBtn.addEventListener('click', () => {
-        searchInput.value = '';
-        stockFilter.value = 'todos';
-        sortSelect.value = 'nombre-asc';
-        currentPage = 1;
-        applyFiltersAndRender();
-        showToast('Filtros restablecidos', 'info');
-      });
-
-      // Pagination
-      prevPageBtn.addEventListener('click', () => {
-        if (currentPage > 1) {
-          currentPage--;
-          renderView();
-        }
-      });
-
-      nextPageBtn.addEventListener('click', () => {
-        const totalPages = Math.ceil(filteredProducts.length / pageSize);
-        if (currentPage < totalPages) {
-          currentPage++;
-          renderView();
-        }
-      });
 
       // Add Empty Row
       addEmptyRowBtn.addEventListener('click', () => {
@@ -946,7 +828,6 @@
         stockFilter.value = 'todos';
         sortSelect.value = 'nombre-asc';
         
-        currentPage = 1;
         applyFiltersAndRender();
         
         setTimeout(() => {
@@ -1041,7 +922,7 @@
               ip.setAttribute('data-code', product.codigo);
             });
 
-            applyFiltersAndRender(false);
+            applyFiltersAndRender();
           } catch (err) {
             showToast(`Error al crear: ${err.message}`, 'error');
           }
@@ -1078,7 +959,7 @@
               ip.setAttribute('data-code', newValue);
             });
             
-            applyFiltersAndRender(false);
+            applyFiltersAndRender();
           } else if (field === 'existencia') {
             const row = document.querySelector(`tr[data-code="${product.codigo}"]`);
             if (row) {
@@ -1094,7 +975,7 @@
     }
 
     // Apply filters and sorting
-    function applyFiltersAndRender(resetPage = true) {
+    function applyFiltersAndRender() {
       let result = [...products];
 
       const query = searchInput.value.trim().toLowerCase();
@@ -1137,37 +1018,13 @@
       });
 
       filteredProducts = result;
-      
-      if (resetPage) {
-        currentPage = 1;
-      } else {
-        const totalPages = Math.ceil(filteredProducts.length / pageSize) || 1;
-        if (currentPage > totalPages) currentPage = totalPages;
-      }
-
       renderView();
     }
 
     // Render Table and Cards
     function renderView() {
-      const totalItems = filteredProducts.length;
-      const totalPages = Math.ceil(totalItems / pageSize) || 1;
-      
-      currentPageNum.textContent = `Página ${currentPage} de ${totalPages}`;
-      prevPageBtn.disabled = currentPage === 1;
-      nextPageBtn.disabled = currentPage === totalPages;
-
-      const startIndex = (currentPage - 1) * pageSize;
-      const endIndex = Math.min(startIndex + pageSize, totalItems);
-      
-      paginationInfo.textContent = totalItems > 0 
-        ? `Mostrando ${startIndex + 1} - ${endIndex} de ${totalItems} productos` 
-        : 'Mostrando 0 - 0 de 0 productos';
-
-      const pageItems = filteredProducts.slice(startIndex, endIndex);
-
-      renderDesktopTable(pageItems);
-      renderMobileCards(pageItems);
+      renderDesktopTable(filteredProducts);
+      renderMobileCards(filteredProducts);
     }
 
     // Render Desktop Table
@@ -1302,7 +1159,7 @@
         const index = products.findIndex(p => p.tempId === tempId);
         if (index !== -1) {
           products.splice(index, 1);
-          applyFiltersAndRender(false);
+          applyFiltersAndRender();
           showToast('Fila eliminada', 'success');
         }
         return;
@@ -1314,7 +1171,7 @@
       const deletedProduct = products[index];
 
       products.splice(index, 1);
-      applyFiltersAndRender(false);
+      applyFiltersAndRender();
 
       try {
         const { error } = await supabaseClient
@@ -1327,7 +1184,7 @@
       } catch (err) {
         showToast(`Error al eliminar: ${err.message}`, 'error');
         products.push(deletedProduct);
-        applyFiltersAndRender(false);
+        applyFiltersAndRender();
       }
     }
 
