@@ -1177,14 +1177,11 @@
       items.forEach(p => {
         const existence = parseFloat(p.existencia);
         let tagClass = 'tag-success';
-        let badgeText = 'Normal';
 
         if (existence === 0) {
           tagClass = 'tag-danger';
-          badgeText = 'Faltante';
         } else if (existence <= 5) {
           tagClass = 'tag-warning';
-          badgeText = 'Bajo Stock';
         }
 
         const div = document.createElement('div');
@@ -1195,14 +1192,14 @@
           <!-- Left Ribbon for Product Code -->
           <span class="card-tag tag-left">${p.codigo || 'Nueva'}</span>
           <!-- Right Ribbon for Stock Level Status -->
-          <span class="card-tag tag-right ${tagClass}">${badgeText}</span>
+          <span class="card-tag tag-right ${tagClass}">Stock: ${p.existencia}</span>
 
-          <!-- Row 1: Description (Left) & Existence (Right) -->
+          <!-- Row 1: Description (Left) & Proveedor (Right) -->
           <div class="card-row-top" style="margin-top: 1.35rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.65rem;">
-            <div class="card-title" style="flex: 1;">${p.descripcion || '<span style="color: var(--text-muted); font-style: italic;">Sin nombre</span>'}</div>
-            <div class="card-field" style="text-align: right; min-width: 80px;">
-              <label>Existencia</label>
-              <span class="card-field-val numeric-val" style="font-weight: 700; font-size: 1.15rem; color: var(--text-main);">${p.existencia}</span>
+            <div class="card-title" style="flex: 1.2;">${p.descripcion || '<span style="color: var(--text-muted); font-style: italic;">Sin nombre</span>'}</div>
+            <div class="card-field" style="text-align: right; flex: 0.8; min-width: 100px;">
+              <label>Proveedor</label>
+              <span class="card-field-val" style="font-weight: 500; font-size: 0.85rem; color: var(--text-main);">${p.proveedor || '<span style="color: var(--text-muted); font-style: italic;">Sin asignar</span>'}</span>
             </div>
           </div>
 
