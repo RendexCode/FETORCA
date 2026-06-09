@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FETORCA - Control de Inventario</title>
+  <!-- Supabase JS Client (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    /* CSS Palette - Solid Spreadsheet Style (Light Only) */
+    :root {
+      --bg-color: #f1f5f9;
+      --panel-bg: #ffffff;
+      --border-color: #cbd5e1;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --primary: #059669; /* Emerald 600 */
+      --primary-hover: #047857;
+      --primary-light: #d1fae5;
+      --danger: #dc2626;
+      --danger-light: #fee2e2;
+      --warning: #d97706;
+      --warning-light: #fef3c7;
+      --tr-hover: #f8fafc;
+      --input-focus: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 1rem;
+      min-height: 100vh;
+    }
+
+    .app-container {
+      max-width: 100%;
+      margin: 0 auto;
+      background: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 1rem;
+    }
+
+    /* Top Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-section h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .brand-section h1 span {
+      color: var(--primary);
+    }
+
+    .brand-section p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Toolbar / Controls - Google Sheets Style */
+    .toolbar {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .toolbar-group label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .toolbar input[type="text"], .toolbar select {
+      border: 1px solid var(--border-color);
+      background: #ffffff;
+      color: var(--text-main);
+      padding: 0.4rem 0.6rem;
+      font-size: 0.85rem;
+      outline: none;
+      border-radius: 2px;
+    }
+
+    .toolbar input[type="text"]:focus, .toolbar select:focus {
+      border-color: var(--primary);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 3px;
+      font-weight: 500;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border: 1px solid var(--border-color);
+      background: #ffffff;
+      color: var(--text-main);
+      outline: none;
+    }
+
+    .btn:hover {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+
+    /* Grid Area */
+    .grid-container {
+      border: 1px solid var(--border-color);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 0.75rem;
+    }
+
+    /* Desktop Excel Table */
+    .desktop-table-view {
+      overflow-x: auto;
+      max-height: 68vh;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      background: #f8fafc;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border-bottom: 2px solid var(--border-color);
+      border-right: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    td {
+      padding: 0;
+      font-size: 0.9rem;
+      border-bottom: 1px solid var(--border-color);
+      border-right: 1px solid var(--border-color);
+      height: 35px;
+    }
+
+    tr:hover {
+      background: var(--tr-hover);
+    }
+
+    /* Permanent Input Cells */
+    .cell-input {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.9rem;
+      color: var(--text-main);
+      outline: none;
+      border-radius: 0;
+    }
+
+    .cell-input:focus {
+      background: #ffffff;
+      outline: 2px solid var(--primary);
+      z-index: 5;
+    }
+
+    .num-input {
+      font-family: monospace;
+    }
+
+    /* Highlights for stock level */
+    .row-bajo-stock {
+      background-color: var(--warning-light) !important;
+    }
+
+    .row-faltante {
+      background-color: var(--danger-light) !important;
+    }
+
+    .row-bajo-stock .cell-input {
+      color: #92400e;
+    }
+
+    .row-faltante .cell-input {
+      color: #991b1b;
+      font-weight: 600;
+    }
+
+    /* Actions Column */
+    .delete-btn {
+      color: var(--text-muted);
+      cursor: pointer;
+      border: none;
+      background: none;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .delete-btn:hover {
+      color: var(--danger);
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    /* Mobile Cards View */
+    .mobile-cards-view {
+      display: none;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 0.5rem;
+      max-height: 68vh;
+      overflow-y: auto;
+    }
+
+    .product-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.4rem;
+    }
+
+    .card-title-input {
+      width: 100%;
+      font-weight: 600;
+      border: 1px solid transparent;
+      padding: 2px;
+      outline: none;
+      font-size: 0.95rem;
+    }
+
+    .card-title-input:focus {
+      border-color: var(--primary);
+      background: #ffffff;
+    }
+
+    .card-code-input {
+      font-family: monospace;
+      font-size: 0.8rem;
+      width: 120px;
+      border: 1px solid transparent;
+      padding: 2px;
+      outline: none;
+    }
+
+    .card-code-input:focus {
+      border-color: var(--primary);
+      background: #ffffff;
+    }
+
+    .card-body-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.4rem;
+    }
+
+    .card-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .card-field label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .card-field input {
+      padding: 0.3rem 0.5rem;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      font-size: 0.85rem;
+      outline: none;
+      border-radius: 2px;
+    }
+
+    .card-field input:focus {
+      border-color: var(--primary);
+    }
+
+    .card-field-full {
+      grid-column: span 2;
+    }
+
+    .card-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 0.25rem;
+      border-top: 1px solid var(--border-color);
+      padding-top: 0.4rem;
+    }
+
+    /* Footer & Pagination */
+    .pagination-bar {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 0.5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .pagination-info {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .pagination-buttons {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .page-btn {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.3rem 0.6rem;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .page-btn:hover:not(:disabled) {
+      border-color: var(--primary);
+      background: #f1f5f9;
+    }
+
+    .page-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Toasts/Alerts System */
+    .toast-container {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      z-index: 110;
+    }
+
+    .toast {
+      background: #ffffff;
+      border: 1px solid #94a3b8;
+      border-left: 4px solid var(--primary);
+      border-radius: 2px;
+      padding: 0.75rem 1rem;
+      min-width: 280px;
+      max-width: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .toast.toast-error {
+      border-left-color: var(--danger);
+      border-color: #f87171;
+    }
+
+    .toast.toast-warning {
+      border-left-color: var(--warning);
+      border-color: #fbbf24;
+    }
+
+    .toast-content {
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .toast-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+
+    /* Loading Spinner */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--bg-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      gap: 1rem;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border-color);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* RESPONSIVE MEDIA QUERIES */
+    @media (max-width: 767px) {
+      .desktop-table-view {
+        display: none;
+      }
+      .mobile-cards-view {
+        display: flex;
+      }
+      header {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+      }
+      .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+      }
+      .toolbar-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .pagination-bar {
+        flex-direction: column;
+        gap: 0.75rem;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Loading Screen -->
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <p id="loadingText" style="font-weight: 600; font-size: 0.95rem;">Conectando a Supabase y cargando inventario...</p>
+  </div>
+
+  <div class="app-container">
+    
+    <!-- Top Header -->
+    <header>
+      <div class="brand-section">
+        <!-- Inline SVG logo -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        <div>
+          <h1>FETORCA <span>Inventario</span></h1>
+          <p>Sincronización en tiempo real para almacén</p>
+        </div>
+      </div>
+      <div>
+        <button id="addEmptyRowBtn" class="btn btn-primary">
+          <!-- Inline SVG plus -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Agregar Fila
+        </button>
+      </div>
+    </header>
+
+    <!-- Toolbar Controls -->
+    <section class="toolbar">
+      <!-- Search Bar -->
+      <div class="toolbar-group">
+        <label for="searchInput">Buscar producto:</label>
+        <input type="text" id="searchInput" placeholder="Escribe el código o descripción...">
+      </div>
+      
+      <!-- Filter Dropdown -->
+      <div class="toolbar-group">
+        <label for="stockFilter">Filtrar stock:</label>
+        <select id="stockFilter">
+          <option value="todos">Todos los productos</option>
+          <option value="faltante">Faltantes (Existencia = 0)</option>
+          <option value="bajo">Bajo Stock (Existencia ≤ 5)</option>
+          <option value="con-existencia">Con Existencia (&gt; 5)</option>
+          <option value="problemas">Pendientes (Faltantes y Bajo Stock)</option>
+        </select>
+      </div>
+
+      <!-- Sorting Dropdown -->
+      <div class="toolbar-group">
+        <label for="sortSelect">Ordenar por:</label>
+        <select id="sortSelect">
+          <option value="nombre-asc">Nombre (A - Z)</option>
+          <option value="nombre-desc">Nombre (Z - A)</option>
+          <option value="existencia-asc">Existencia (Menor a Mayor)</option>
+          <option value="existencia-desc">Existencia (Mayor a Menor)</option>
+          <option value="codigo-asc">Código (A - Z)</option>
+        </select>
+      </div>
+
+      <!-- Quick Reset Button -->
+      <button id="resetFiltersBtn" class="btn" title="Limpiar Filtros">
+        Restablecer
+      </button>
+    </section>
+
+    <!-- Content Grid Area -->
+    <main class="grid-container">
+      
+      <!-- Desktop Table View -->
+      <div class="desktop-table-view">
+        <table id="productsTable">
+          <thead>
+            <tr>
+              <th style="width: 15%;">Código</th>
+              <th style="width: 35%;">Descripción</th>
+              <th style="width: 20%;">Proveedor</th>
+              <th style="width: 10%; text-align: right;">Costo ($)</th>
+              <th style="width: 10%; text-align: right;">Precio ($)</th>
+              <th style="width: 10%; text-align: right;">Existencia</th>
+              <th style="width: 5%; text-align: center;">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <!-- Table rows populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Cards View -->
+      <div class="mobile-cards-view" id="cardsBody">
+        <!-- Cards populated dynamically -->
+      </div>
+
+    </main>
+
+    <!-- Pagination & Status Bar -->
+    <footer class="pagination-bar">
+      <div class="pagination-info" id="paginationInfo">
+        Mostrando 0 - 0 de 0 productos
+      </div>
+      <div class="pagination-buttons">
+        <button id="prevPageBtn" class="page-btn" disabled>Anterior</button>
+        <span id="currentPageNum" style="font-weight: 600; margin: 0 0.5rem; font-size: 0.85rem;">Página 1</span>
+        <button id="nextPageBtn" class="page-btn" disabled>Siguiente</button>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Script logic -->
+  <script>
+    // Supabase Configuration
+    const SUPABASE_URL = 'https://ghxibrkyjgpmtdposhcb.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_cej5zwLUjo60BU-aB1wI_w_6a3yc7cD';
+
+    // Global Supabase client variable
+    let supabaseClient;
+
+    // App State
+    let products = [];
+    let filteredProducts = [];
+    let currentPage = 1;
+    const pageSize = 50;
+    let tempIdCounter = 0;
+
+    // DOM Elements
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const loadingText = document.getElementById('loadingText');
+    const tableBody = document.getElementById('tableBody');
+    const cardsBody = document.getElementById('cardsBody');
+    
+    // Inputs & Filters
+    const searchInput = document.getElementById('searchInput');
+    const stockFilter = document.getElementById('stockFilter');
+    const sortSelect = document.getElementById('sortSelect');
+    const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+    
+    // Pagination Elements
+    const prevPageBtn = document.getElementById('prevPageBtn');
+    const nextPageBtn = document.getElementById('nextPageBtn');
+    const currentPageNum = document.getElementById('currentPageNum');
+    const paginationInfo = document.getElementById('paginationInfo');
+
+    // Add Empty Row Button
+    const addEmptyRowBtn = document.getElementById('addEmptyRowBtn');
+
+    // App Initialization (runs on window load after CDN scripts have loaded)
+    async function init() {
+      // Validate that Supabase library is loaded
+      if (typeof supabase === 'undefined') {
+        const errorMsg = 'Error: No se pudo cargar el cliente de Supabase desde el CDN. Si estás abriendo el archivo localmente, asegúrate de estar conectado a Internet para descargar el cliente.';
+        console.error(errorMsg);
+        loadingText.innerHTML = `<span style="color:var(--danger); font-weight:bold;">${errorMsg}</span>`;
+        loadingOverlay.querySelector('.spinner').style.borderTopColor = 'var(--danger)';
+        loadingOverlay.querySelector('.spinner').style.animation = 'none';
+        showToast('Error de conexión con el CDN', 'error');
+        return;
+      }
+
+      // Initialize Supabase Client safely
+      try {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      } catch (clientErr) {
+        console.error('Error al inicializar el cliente de Supabase:', clientErr);
+        loadingText.innerHTML = `<span style="color:var(--danger); font-weight:bold;">Error al iniciar cliente: ${clientErr.message}</span>`;
+        return;
+      }
+
+      await fetchProducts();
+      setupRealtimeSubscription();
+      setupEventListeners();
+      applyFiltersAndRender();
+      loadingOverlay.style.display = 'none';
+    }
+
+    // Fetch products from database
+    async function fetchProducts() {
+      try {
+        const { data, error } = await supabaseClient
+          .from('productos')
+          .select('*');
+
+        if (error) throw error;
+        products = data || [];
+      } catch (err) {
+        showToast(`Error cargando inventario: ${err.message}`, 'error');
+        console.error(err);
+      }
+    }
+
+    // Set up Realtime listener
+    function setupRealtimeSubscription() {
+      try {
+        supabaseClient
+          .channel('db-changes')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'productos' },
+            (payload) => {
+              console.log('Cambio detectado:', payload);
+              handleRealtimePayload(payload);
+            }
+          )
+          .subscribe();
+      } catch (realtimeErr) {
+        console.warn('Advertencia: No se pudo conectar a la suscripción Realtime. Los cambios remotos se verán al recargar.', realtimeErr);
+      }
+    }
+
+    // Handle Realtime updates
+    function handleRealtimePayload(payload) {
+      const { eventType, new: newRecord, old: oldRecord } = payload;
+
+      if (eventType === 'INSERT') {
+        const index = products.findIndex(p => p.codigo === newRecord.codigo);
+        if (index === -1) {
+          products.push(newRecord);
+        }
+      } 
+      else if (eventType === 'UPDATE') {
+        if (oldRecord && oldRecord.codigo && oldRecord.codigo !== newRecord.codigo) {
+          const index = products.findIndex(p => p.codigo === oldRecord.codigo);
+          if (index !== -1) {
+            products[index] = newRecord;
+          }
+        } else {
+          const index = products.findIndex(p => p.codigo === newRecord.codigo);
+          if (index !== -1) {
+            products[index] = newRecord;
+          }
+        }
+      } 
+      else if (eventType === 'DELETE') {
+        const targetCode = oldRecord && oldRecord.codigo ? oldRecord.codigo : null;
+        if (targetCode) {
+          const index = products.findIndex(p => p.codigo === targetCode);
+          if (index !== -1) {
+            products.splice(index, 1);
+          }
+        }
+      }
+
+      applyFiltersAndRender(false);
+    }
+
+    // Event Listeners setup
+    function setupEventListeners() {
+      // Inputs
+      searchInput.addEventListener('input', () => { currentPage = 1; applyFiltersAndRender(); });
+      stockFilter.addEventListener('change', () => { currentPage = 1; applyFiltersAndRender(); });
+      sortSelect.addEventListener('change', () => { applyFiltersAndRender(); });
+      
+      // Reset
+      resetFiltersBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        stockFilter.value = 'todos';
+        sortSelect.value = 'nombre-asc';
+        currentPage = 1;
+        applyFiltersAndRender();
+        showToast('Filtros restablecidos', 'info');
+      });
+
+      // Pagination
+      prevPageBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+          currentPage--;
+          renderView();
+        }
+      });
+
+      nextPageBtn.addEventListener('click', () => {
+        const totalPages = Math.ceil(filteredProducts.length / pageSize);
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderView();
+        }
+      });
+
+      // Add Empty Row
+      addEmptyRowBtn.addEventListener('click', () => {
+        tempIdCounter++;
+        const tempId = `_temp_${tempIdCounter}_${Date.now()}`;
+        const newRow = {
+          codigo: '',
+          descripcion: '',
+          proveedor: '',
+          costo: 0,
+          precio: 0,
+          existencia: 0,
+          isNew: true,
+          tempId: tempId
+        };
+        
+        products.unshift(newRow);
+        
+        searchInput.value = '';
+        stockFilter.value = 'todos';
+        sortSelect.value = 'nombre-asc';
+        
+        currentPage = 1;
+        applyFiltersAndRender();
+        
+        setTimeout(() => {
+          const firstInput = document.querySelector(`tr[data-code="${tempId}"] input[data-field="codigo"]`) ||
+                             document.querySelector(`.product-card[data-code="${tempId}"] input[data-field="codigo"]`);
+          if (firstInput) firstInput.focus();
+        }, 50);
+
+        showToast('Fila vacía agregada de primero', 'info');
+      });
+
+      // Event Delegation for Table inputs (Change event)
+      tableBody.addEventListener('change', (e) => {
+        if (e.target.classList.contains('cell-input')) {
+          handleInputChange(e.target);
+        }
+      });
+
+      // Event Delegation for Mobile Card inputs
+      cardsBody.addEventListener('change', (e) => {
+        if (e.target.classList.contains('cell-input')) {
+          handleInputChange(e.target);
+        }
+      });
+    }
+
+    // Handle Input Changes and Save to Supabase
+    async function handleInputChange(inputElement) {
+      const field = inputElement.dataset.field;
+      const currentKey = inputElement.dataset.code;
+      let newValue = inputElement.value.trim();
+
+      const product = products.find(p => p.codigo === currentKey || p.tempId === currentKey);
+      if (!product) return;
+
+      const oldValue = product[field];
+
+      if (field === 'costo' || field === 'precio') {
+        newValue = parseFloat(newValue) || 0;
+        if (newValue < 0) newValue = 0;
+      } else if (field === 'existencia') {
+        newValue = parseInt(newValue) || 0;
+        if (newValue < 0) newValue = 0;
+      }
+
+      if (newValue === oldValue && !product.isNew) {
+        inputElement.value = field === 'costo' || field === 'precio' ? parseFloat(oldValue || 0).toFixed(2) : oldValue;
+        return;
+      }
+
+      if (field === 'codigo') {
+        if (!newValue) {
+          showToast('El código es obligatorio', 'error');
+          inputElement.value = oldValue || '';
+          return;
+        }
+
+        const isDuplicate = products.some(p => p.codigo === newValue && p.codigo !== currentKey && p.tempId !== currentKey);
+        if (isDuplicate) {
+          showToast(`El código "${newValue}" ya ha sido colocado en la lista de productos.`, 'warning');
+          inputElement.value = oldValue || '';
+          return;
+        }
+      }
+
+      product[field] = newValue;
+
+      if (field === 'costo' || field === 'precio') {
+        inputElement.value = parseFloat(newValue).toFixed(2);
+      }
+
+      if (product.isNew) {
+        if (product.codigo && product.descripcion) {
+          try {
+            const { error } = await supabaseClient
+              .from('productos')
+              .insert([{
+                codigo: product.codigo,
+                descripcion: product.descripcion,
+                proveedor: product.proveedor,
+                costo: product.costo,
+                precio: product.precio,
+                existencia: product.existencia
+              }]);
+
+            if (error) throw error;
+            
+            product.isNew = false;
+            const tempId = product.tempId;
+            delete product.tempId;
+            
+            showToast('Producto creado exitosamente', 'success');
+
+            const elementsToUpdate = document.querySelectorAll(`[data-code="${tempId}"]`);
+            elementsToUpdate.forEach(el => {
+              el.setAttribute('data-code', product.codigo);
+            });
+            const inputsToUpdate = document.querySelectorAll(`input[data-code="${tempId}"]`);
+            inputsToUpdate.forEach(ip => {
+              ip.setAttribute('data-code', product.codigo);
+            });
+
+            applyFiltersAndRender(false);
+          } catch (err) {
+            showToast(`Error al crear: ${err.message}`, 'error');
+          }
+        } else {
+          showToast('Código y Descripción requeridos para guardar en la base de datos', 'info');
+        }
+      } else {
+        try {
+          let error;
+          if (field === 'codigo') {
+            const result = await supabaseClient
+              .from('productos')
+              .update({ codigo: newValue })
+              .eq('codigo', currentKey);
+            error = result.error;
+          } else {
+            const result = await supabaseClient
+              .from('productos')
+              .update({ [field]: newValue })
+              .eq('codigo', currentKey);
+            error = result.error;
+          }
+
+          if (error) throw error;
+          showToast('Guardado con éxito', 'success');
+
+          if (field === 'codigo') {
+            const elementsToUpdate = document.querySelectorAll(`[data-code="${currentKey}"]`);
+            elementsToUpdate.forEach(el => {
+              el.setAttribute('data-code', newValue);
+            });
+            const inputsToUpdate = document.querySelectorAll(`input[data-code="${currentKey}"]`);
+            inputsToUpdate.forEach(ip => {
+              ip.setAttribute('data-code', newValue);
+            });
+            
+            applyFiltersAndRender(false);
+          } else if (field === 'existencia') {
+            const row = document.querySelector(`tr[data-code="${product.codigo}"]`);
+            if (row) {
+              row.className = newValue === 0 ? 'row-faltante' : newValue <= 5 ? 'row-bajo-stock' : 'row-normal';
+            }
+            const card = document.querySelector(`.product-card[data-code="${product.codigo}"]`);
+            if (card) {
+              card.style = newValue === 0 ? 'border-left: 4px solid var(--danger);' : newValue <= 5 ? 'border-left: 4px solid var(--warning);' : '';
+            }
+          }
+        } catch (err) {
+          showToast(`Error al guardar: ${err.message}`, 'error');
+          product[field] = oldValue;
+          inputElement.value = field === 'costo' || field === 'precio' ? parseFloat(oldValue || 0).toFixed(2) : oldValue;
+        }
+      }
+    }
+
+    // Apply filters and sorting
+    function applyFiltersAndRender(resetPage = true) {
+      let result = [...products];
+
+      const query = searchInput.value.trim().toLowerCase();
+      if (query) {
+        result = result.filter(p => 
+          p.codigo.toLowerCase().includes(query) || 
+          p.descripcion.toLowerCase().includes(query) ||
+          (p.proveedor && p.proveedor.toLowerCase().includes(query))
+        );
+      }
+
+      const stockVal = stockFilter.value;
+      if (stockVal === 'faltante') {
+        result = result.filter(p => parseFloat(p.existencia) === 0);
+      } else if (stockVal === 'bajo') {
+        result = result.filter(p => parseFloat(p.existencia) > 0 && parseFloat(p.existencia) <= 5);
+      } else if (stockVal === 'con-existencia') {
+        result = result.filter(p => parseFloat(p.existencia) > 5);
+      } else if (stockVal === 'problemas') {
+        result = result.filter(p => parseFloat(p.existencia) <= 5);
+      }
+
+      const sortVal = sortSelect.value;
+      result.sort((a, b) => {
+        if (a.isNew && !b.isNew) return -1;
+        if (!a.isNew && b.isNew) return 1;
+
+        if (sortVal === 'nombre-asc') {
+          return a.descripcion.localeCompare(b.descripcion);
+        } else if (sortVal === 'nombre-desc') {
+          return b.descripcion.localeCompare(a.descripcion);
+        } else if (sortVal === 'existencia-asc') {
+          return parseFloat(a.existencia) - parseFloat(b.existencia);
+        } else if (sortVal === 'existencia-desc') {
+          return parseFloat(b.existencia) - parseFloat(a.existencia);
+        } else if (sortVal === 'codigo-asc') {
+          return a.codigo.localeCompare(b.codigo);
+        }
+        return 0;
+      });
+
+      filteredProducts = result;
+      
+      if (resetPage) {
+        currentPage = 1;
+      } else {
+        const totalPages = Math.ceil(filteredProducts.length / pageSize) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+      }
+
+      renderView();
+    }
+
+    // Render Table and Cards
+    function renderView() {
+      const totalItems = filteredProducts.length;
+      const totalPages = Math.ceil(totalItems / pageSize) || 1;
+      
+      currentPageNum.textContent = `Página ${currentPage} de ${totalPages}`;
+      prevPageBtn.disabled = currentPage === 1;
+      nextPageBtn.disabled = currentPage === totalPages;
+
+      const startIndex = (currentPage - 1) * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, totalItems);
+      
+      paginationInfo.textContent = totalItems > 0 
+        ? `Mostrando ${startIndex + 1} - ${endIndex} de ${totalItems} productos` 
+        : 'Mostrando 0 - 0 de 0 productos';
+
+      const pageItems = filteredProducts.slice(startIndex, endIndex);
+
+      renderDesktopTable(pageItems);
+      renderMobileCards(pageItems);
+    }
+
+    // Render Desktop Table
+    function renderDesktopTable(items) {
+      tableBody.innerHTML = '';
+      
+      if (items.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No se encontraron productos. Haz clic en "Agregar Fila" para crear uno.</td></tr>`;
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+
+      items.forEach(p => {
+        const key = p.codigo || p.tempId;
+        const existence = parseFloat(p.existencia);
+        let rowClass = 'row-normal';
+
+        if (existence === 0) {
+          rowClass = 'row-faltante';
+        } else if (existence <= 5) {
+          rowClass = 'row-bajo-stock';
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = rowClass;
+        tr.setAttribute('data-code', key);
+        tr.innerHTML = `
+          <td>
+            <input type="text" class="cell-input" data-field="codigo" data-code="${key}" value="${p.codigo}">
+          </td>
+          <td>
+            <input type="text" class="cell-input" data-field="descripcion" data-code="${key}" value="${p.descripcion}" placeholder="Ej. TORNILLO HEX...">
+          </td>
+          <td>
+            <input type="text" class="cell-input" data-field="proveedor" data-code="${key}" value="${p.proveedor || ''}" placeholder="Escribe proveedor...">
+          </td>
+          <td>
+            <input type="number" step="0.01" min="0" class="cell-input num-input" style="text-align: right;" data-field="costo" data-code="${key}" value="${parseFloat(p.costo || 0).toFixed(2)}">
+          </td>
+          <td>
+            <input type="number" step="0.01" min="0" class="cell-input num-input" style="text-align: right;" data-field="precio" data-code="${key}" value="${parseFloat(p.precio || 0).toFixed(2)}">
+          </td>
+          <td>
+            <input type="number" step="1" min="0" class="cell-input num-input" style="text-align: right;" data-field="existencia" data-code="${key}" value="${p.existencia}">
+          </td>
+          <td style="text-align: center;">
+            <button class="delete-btn" onclick="confirmDelete('${p.codigo}', '${p.descripcion}', '${p.tempId || ''}')" title="Eliminar">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+            </button>
+          </td>
+        `;
+
+        fragment.appendChild(tr);
+      });
+
+      tableBody.appendChild(fragment);
+    }
+
+    // Render Mobile Cards View
+    function renderMobileCards(items) {
+      cardsBody.innerHTML = '';
+      
+      if (items.length === 0) {
+        cardsBody.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem; width: 100%;">No se encontraron productos.</div>`;
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+
+      items.forEach(p => {
+        const key = p.codigo || p.tempId;
+        const existence = parseFloat(p.existencia);
+        let cardBorder = '';
+
+        if (existence === 0) {
+          cardBorder = 'border-left: 4px solid var(--danger);';
+        } else if (existence <= 5) {
+          cardBorder = 'border-left: 4px solid var(--warning);';
+        }
+
+        const div = document.createElement('div');
+        div.className = 'product-card';
+        div.setAttribute('data-code', key);
+        if (cardBorder) div.style = cardBorder;
+
+        div.innerHTML = `
+          <div class="card-header">
+            <div style="width: 100%;">
+              <input type="text" class="card-title-input cell-input" data-field="descripcion" data-code="${key}" value="${p.descripcion}" placeholder="Nombre / Descripción *">
+              <input type="text" class="card-code-input cell-input" data-field="codigo" data-code="${key}" value="${p.codigo}" placeholder="Código *">
+            </div>
+          </div>
+          <div class="card-body-grid">
+            <div class="card-field card-field-full">
+              <label>Proveedor</label>
+              <input type="text" class="cell-input" data-field="proveedor" data-code="${key}" value="${p.proveedor || ''}" placeholder="Escribe proveedor...">
+            </div>
+            <div class="card-field">
+              <label>Costo ($)</label>
+              <input type="number" step="0.01" class="cell-input" data-field="costo" data-code="${key}" value="${parseFloat(p.costo || 0).toFixed(2)}">
+            </div>
+            <div class="card-field">
+              <label>Precio ($)</label>
+              <input type="number" step="0.01" class="cell-input" data-field="precio" data-code="${key}" value="${parseFloat(p.precio || 0).toFixed(2)}">
+            </div>
+            <div class="card-field card-field-full">
+              <label>Existencia (Cantidad)</label>
+              <input type="number" step="1" class="cell-input" data-field="existencia" data-code="${key}" value="${p.existencia}">
+            </div>
+          </div>
+          <div class="card-actions">
+            <button class="delete-btn" style="color: var(--danger); gap: 4px; justify-content: flex-end;" onclick="confirmDelete('${p.codigo}', '${p.descripcion}', '${p.tempId || ''}')">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg> Eliminar fila
+            </button>
+          </div>
+        `;
+
+        fragment.appendChild(div);
+      });
+
+      cardsBody.appendChild(fragment);
+    }
+
+    // Delete confirm and execution
+    function confirmDelete(code, desc, tempId) {
+      const displayDesc = desc || '(Producto nuevo sin guardar)';
+      if (confirm(`¿Está seguro de que desea eliminar la fila del producto "${displayDesc}"?`)) {
+        deleteProduct(code, tempId);
+      }
+    }
+
+    async function deleteProduct(code, tempId) {
+      if (!code && tempId) {
+        const index = products.findIndex(p => p.tempId === tempId);
+        if (index !== -1) {
+          products.splice(index, 1);
+          applyFiltersAndRender(false);
+          showToast('Fila eliminada', 'success');
+        }
+        return;
+      }
+
+      const index = products.findIndex(p => p.codigo === code);
+      if (index === -1) return;
+
+      const deletedProduct = products[index];
+
+      products.splice(index, 1);
+      applyFiltersAndRender(false);
+
+      try {
+        const { error } = await supabaseClient
+          .from('productos')
+          .delete()
+          .eq('codigo', code);
+
+        if (error) throw error;
+        showToast('Producto eliminado en base de datos', 'success');
+      } catch (err) {
+        showToast(`Error al eliminar: ${err.message}`, 'error');
+        products.push(deletedProduct);
+        applyFiltersAndRender(false);
+      }
+    }
+
+    // Toast Notifications helper
+    function showToast(message, type = 'success') {
+      const toastContainer = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type === 'error' ? 'toast-error' : type === 'warning' ? 'toast-warning' : ''}`;
+      
+      toast.innerHTML = `
+        <div class="toast-content">${message}</div>
+        <button class="toast-close">&times;</button>
+      `;
+
+      toastContainer.appendChild(toast);
+
+      const autoClose = setTimeout(() => {
+        closeToast(toast);
+      }, 3000);
+
+      toast.querySelector('.toast-close').addEventListener('click', () => {
+        clearTimeout(autoClose);
+        closeToast(toast);
+      });
+    }
+
+    function closeToast(toast) {
+      if (toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    }
+
+    // Fire initialization on window load (safe execution)
+    window.onload = init;
+  </script>
+</body>
+</html>
