@@ -12,18 +12,23 @@
     :root {
       --bg-color: #f1f5f9;
       --panel-bg: #ffffff;
-      --border-color: #cbd5e1;
+      --border-color: #e2e8f0;
       --text-main: #0f172a;
-      --text-muted: #475569;
+      --text-muted: #64748b;
       --primary: #059669; /* Emerald 600 */
       --primary-hover: #047857;
-      --primary-light: #d1fae5;
+      --primary-light: rgba(5, 150, 105, 0.12);
       --danger: #dc2626;
       --danger-light: #fee2e2;
+      --danger-text: #991b1b;
       --warning: #d97706;
       --warning-light: #fef3c7;
+      --warning-text: #92400e;
+      --success-light: #d1fae5;
+      --success-text: #065f46;
       --tr-hover: #f8fafc;
-      --input-focus: #e2e8f0;
+      --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
     }
 
     * {
@@ -36,27 +41,29 @@
     body {
       background-color: var(--bg-color);
       color: var(--text-main);
-      padding: 1rem;
+      padding: 1.5rem;
       min-height: 100vh;
     }
 
+    /* Layout Container Wrapper - Transparent (No border, no radius, full-width) */
     .app-container {
       max-width: 100%;
       margin: 0 auto;
-      background: var(--panel-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
     }
 
-    /* Top Header */
+    /* Top Header - Floating Panel */
     header {
+      background: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 2px solid var(--border-color);
-      padding-bottom: 0.75rem;
-      margin-bottom: 0.75rem;
+      box-shadow: var(--shadow-sm);
     }
 
     .brand-section {
@@ -66,7 +73,7 @@
     }
 
     .brand-section h1 {
-      font-size: 1.4rem;
+      font-size: 1.35rem;
       font-weight: 700;
       letter-spacing: -0.5px;
       display: flex;
@@ -83,43 +90,97 @@
       color: var(--text-muted);
     }
 
-    /* Toolbar / Controls - Google Sheets Style */
+    /* Toolbar / Controls - Floating Premium Panel */
     .toolbar {
-      background: #f8fafc;
+      background: var(--panel-bg);
       border: 1px solid var(--border-color);
-      border-radius: 4px;
-      padding: 0.5rem 0.75rem;
-      margin-bottom: 0.75rem;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
+      border-radius: 12px;
+      padding: 0.75rem 1.25rem;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr auto;
       gap: 1rem;
+      align-items: center;
+      box-shadow: var(--shadow-sm);
     }
 
     .toolbar-group {
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      width: 100%;
     }
 
     .toolbar-group label {
       font-size: 0.85rem;
       font-weight: 600;
       color: var(--text-muted);
+      white-space: nowrap;
     }
 
-    .toolbar input[type="text"], .toolbar select {
-      border: 1px solid var(--border-color);
+    /* Styled Search Box */
+    .search-box {
+      position: relative;
+      width: 100%;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 0.55rem 1rem 0.55rem 2.25rem;
+      border-radius: 8px;
       background: #ffffff;
+      border: 1px solid #cbd5e1;
       color: var(--text-main);
-      padding: 0.4rem 0.6rem;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       outline: none;
-      border-radius: 2px;
     }
 
-    .toolbar input[type="text"]:focus, .toolbar select:focus {
+    .search-box input:focus {
       border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    /* Styled Select Dropdowns */
+    .select-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .select-wrapper select {
+      width: 100%;
+      padding: 0.55rem 2rem 0.55rem 0.75rem;
+      border-radius: 8px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: var(--text-main);
+      font-size: 0.9rem;
+      outline: none;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    .select-wrapper select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .select-wrapper::after {
+      content: '';
+      position: absolute;
+      right: 0.85rem;
+      top: 50%;
+      transform: translateY(-20%);
+      border: 5px solid transparent;
+      border-top-color: var(--text-muted);
+      pointer-events: none;
     }
 
     /* Buttons */
@@ -128,19 +189,19 @@
       align-items: center;
       justify-content: center;
       gap: 0.25rem;
-      padding: 0.4rem 0.8rem;
-      border-radius: 3px;
-      font-weight: 500;
+      padding: 0.55rem 1rem;
+      border-radius: 8px;
+      font-weight: 600;
       font-size: 0.85rem;
       cursor: pointer;
-      border: 1px solid var(--border-color);
+      border: 1px solid #cbd5e1;
       background: #ffffff;
       color: var(--text-main);
       outline: none;
     }
 
     .btn:hover {
-      background: #f1f5f9;
+      background: #f8fafc;
       border-color: #94a3b8;
     }
 
@@ -155,12 +216,22 @@
       border-color: var(--primary-hover);
     }
 
-    /* Grid Area */
+    .btn-danger {
+      color: var(--danger);
+    }
+
+    .btn-danger:hover {
+      background: var(--danger-light);
+      border-color: #f87171;
+    }
+
+    /* Grid Area - Floating Panel */
     .grid-container {
+      background: var(--panel-bg);
       border: 1px solid var(--border-color);
-      border-radius: 2px;
+      border-radius: 12px;
       overflow: hidden;
-      margin-bottom: 0.75rem;
+      box-shadow: var(--shadow-sm);
     }
 
     /* Desktop Excel Table */
@@ -177,7 +248,7 @@
 
     th {
       background: #f8fafc;
-      padding: 0.5rem 0.75rem;
+      padding: 0.65rem 0.75rem;
       font-size: 0.8rem;
       font-weight: 600;
       text-transform: uppercase;
@@ -194,7 +265,7 @@
       font-size: 0.9rem;
       border-bottom: 1px solid var(--border-color);
       border-right: 1px solid var(--border-color);
-      height: 35px;
+      height: 38px;
     }
 
     tr:hover {
@@ -207,7 +278,7 @@
       height: 100%;
       border: none;
       background: transparent;
-      padding: 0.4rem 0.6rem;
+      padding: 0.45rem 0.75rem;
       font-size: 0.9rem;
       color: var(--text-main);
       outline: none;
@@ -234,11 +305,11 @@
     }
 
     .row-bajo-stock .cell-input {
-      color: #92400e;
+      color: var(--warning-text);
     }
 
     .row-faltante .cell-input {
-      color: #991b1b;
+      color: var(--danger-text);
       font-weight: 600;
     }
 
@@ -257,26 +328,29 @@
 
     .delete-btn:hover {
       color: var(--danger);
-      background: rgba(239, 68, 68, 0.1);
+      background: rgba(239, 68, 68, 0.08);
     }
 
-    /* Mobile Cards View */
+    /* Mobile Cards View - Modern Layout */
     .mobile-cards-view {
       display: none;
       flex-direction: column;
-      gap: 0.75rem;
-      padding: 0.5rem;
+      gap: 1rem;
+      padding: 1rem;
       max-height: 68vh;
       overflow-y: auto;
+      background: #f8fafc;
     }
 
     .product-card {
       background: #ffffff;
       border: 1px solid var(--border-color);
-      padding: 0.75rem;
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 0.75rem;
+      box-shadow: var(--shadow-md);
     }
 
     .card-header {
@@ -284,70 +358,102 @@
       justify-content: space-between;
       align-items: flex-start;
       gap: 0.5rem;
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 0.4rem;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 0.65rem;
     }
 
     .card-title {
-      font-weight: 600;
-      font-size: 0.95rem;
+      font-weight: 700;
+      font-size: 1rem;
       color: var(--text-main);
+      line-height: 1.3;
     }
 
     .card-code {
       font-family: monospace;
       font-size: 0.8rem;
       color: var(--text-muted);
-      background: #e2e8f0;
-      padding: 2px 6px;
-      border-radius: 2px;
+      background: #f1f5f9;
+      padding: 3px 8px;
+      border-radius: 4px;
       display: inline-block;
-      margin-top: 4px;
+      margin-top: 6px;
+      font-weight: 500;
     }
 
     .card-body-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 0.4rem;
+      gap: 0.75rem;
     }
 
     .card-field {
       display: flex;
       flex-direction: column;
-      gap: 0.15rem;
+      gap: 0.2rem;
     }
 
     .card-field label {
       font-size: 0.7rem;
       color: var(--text-muted);
       text-transform: uppercase;
-      font-weight: 600;
+      font-weight: 700;
+      letter-spacing: 0.5px;
     }
 
     .card-field-val {
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       color: var(--text-main);
-      padding: 2px 0;
+      font-weight: 500;
     }
 
     .card-field-full {
       grid-column: span 2;
     }
 
-    /* Footer & Pagination */
+    /* Badges for Mobile Stock Level */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 30px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .badge-danger {
+      background-color: var(--danger-light);
+      color: var(--danger-text);
+    }
+
+    .badge-warning {
+      background-color: var(--warning-light);
+      color: var(--warning-text);
+    }
+
+    .badge-success {
+      background-color: var(--success-light);
+      color: var(--success-text);
+    }
+
+    /* Footer & Pagination - Floating Panel */
     .pagination-bar {
-      background: #f8fafc;
+      background: var(--panel-bg);
       border: 1px solid var(--border-color);
-      border-radius: 4px;
-      padding: 0.5rem 1rem;
+      border-radius: 12px;
+      padding: 0.75rem 1.5rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      box-shadow: var(--shadow-sm);
     }
 
     .pagination-info {
       font-size: 0.85rem;
       color: var(--text-muted);
+      font-weight: 500;
     }
 
     .pagination-buttons {
@@ -358,17 +464,18 @@
 
     .page-btn {
       background: #ffffff;
-      border: 1px solid var(--border-color);
+      border: 1px solid #cbd5e1;
       color: var(--text-main);
-      padding: 0.3rem 0.6rem;
-      border-radius: 3px;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
       cursor: pointer;
       font-size: 0.85rem;
+      font-weight: 500;
     }
 
     .page-btn:hover:not(:disabled) {
       border-color: var(--primary);
-      background: #f1f5f9;
+      background: #f8fafc;
     }
 
     .page-btn:disabled {
@@ -391,15 +498,15 @@
       background: #ffffff;
       border: 1px solid #94a3b8;
       border-left: 4px solid var(--primary);
-      border-radius: 2px;
-      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      padding: 0.75rem 1.25rem;
       min-width: 280px;
       max-width: 400px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 0.5rem;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
     .toast.toast-error {
@@ -414,7 +521,7 @@
 
     .toast-content {
       font-size: 0.85rem;
-      font-weight: 500;
+      font-weight: 600;
     }
 
     .toast-close {
@@ -457,7 +564,22 @@
     }
 
     /* RESPONSIVE MEDIA QUERIES */
+    @media (max-width: 1024px) {
+      .toolbar {
+        grid-template-columns: 1fr 1fr;
+      }
+      .toolbar-group:first-child {
+        grid-column: span 2;
+      }
+      #resetFiltersBtn {
+        grid-column: span 2;
+      }
+    }
+
     @media (max-width: 767px) {
+      body {
+        padding: 0.75rem;
+      }
       .desktop-table-view {
         display: none;
       }
@@ -473,13 +595,18 @@
         text-align: center;
       }
       .toolbar {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.75rem;
+        grid-template-columns: 1fr;
+        padding: 1rem;
       }
       .toolbar-group {
         flex-direction: column;
         align-items: stretch;
+      }
+      .toolbar-group label {
+        margin-bottom: 2px;
+      }
+      #resetFiltersBtn {
+        grid-column: span 1 !important;
       }
       .pagination-bar {
         flex-direction: column;
@@ -517,40 +644,47 @@
       </div>
     </header>
 
-    <!-- Toolbar Controls -->
+    <!-- Toolbar Controls (SaaS style) -->
     <section class="toolbar">
       <!-- Search Bar -->
       <div class="toolbar-group">
-        <label for="searchInput">Buscar producto:</label>
-        <input type="text" id="searchInput" placeholder="Escribe el código o descripción...">
+        <label for="searchInput">Buscar:</label>
+        <div class="search-box">
+          <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="searchInput" placeholder="Escribe código, descripción o proveedor...">
+        </div>
       </div>
       
       <!-- Filter Dropdown -->
       <div class="toolbar-group">
-        <label for="stockFilter">Filtrar stock:</label>
-        <select id="stockFilter">
-          <option value="todos">Todos los productos</option>
-          <option value="faltante">Faltantes (Existencia = 0)</option>
-          <option value="bajo">Bajo Stock (Existencia ≤ 5)</option>
-          <option value="con-existencia">Con Existencia (&gt; 5)</option>
-          <option value="problemas">Pendientes (Faltantes y Bajo Stock)</option>
-        </select>
+        <label for="stockFilter">Stock:</label>
+        <div class="select-wrapper">
+          <select id="stockFilter">
+            <option value="todos">Todos los productos</option>
+            <option value="faltante">Faltantes (Existencia = 0)</option>
+            <option value="bajo">Bajo Stock (Existencia ≤ 5)</option>
+            <option value="con-existencia">Con Existencia (&gt; 5)</option>
+            <option value="problemas">Pendientes (Faltantes y Bajo Stock)</option>
+          </select>
+        </div>
       </div>
 
       <!-- Sorting Dropdown -->
       <div class="toolbar-group">
-        <label for="sortSelect">Ordenar por:</label>
-        <select id="sortSelect">
-          <option value="nombre-asc">Nombre (A - Z)</option>
-          <option value="nombre-desc">Nombre (Z - A)</option>
-          <option value="existencia-asc">Existencia (Menor a Mayor)</option>
-          <option value="existencia-desc">Existencia (Mayor a Menor)</option>
-          <option value="codigo-asc">Código (A - Z)</option>
-        </select>
+        <label for="sortSelect">Orden:</label>
+        <div class="select-wrapper">
+          <select id="sortSelect">
+            <option value="nombre-asc">Nombre (A - Z)</option>
+            <option value="nombre-desc">Nombre (Z - A)</option>
+            <option value="existencia-asc">Existencia (Menor a Mayor)</option>
+            <option value="existencia-desc">Existencia (Mayor a Menor)</option>
+            <option value="codigo-asc">Código (A - Z)</option>
+          </select>
+        </div>
       </div>
 
       <!-- Quick Reset Button -->
-      <button id="resetFiltersBtn" class="btn" title="Limpiar Filtros">
+      <button id="resetFiltersBtn" class="btn btn-danger" title="Limpiar Filtros">
         Restablecer
       </button>
     </section>
@@ -1088,22 +1222,18 @@
         const existence = parseFloat(p.existencia);
         let badgeClass = 'badge-success';
         let badgeText = 'Normal';
-        let cardBorder = '';
 
         if (existence === 0) {
           badgeClass = 'badge-danger';
           badgeText = 'Faltante';
-          cardBorder = 'border-left: 4px solid var(--danger);';
         } else if (existence <= 5) {
           badgeClass = 'badge-warning';
           badgeText = 'Bajo Stock';
-          cardBorder = 'border-left: 4px solid var(--warning);';
         }
 
         const div = document.createElement('div');
         div.className = 'product-card';
         div.setAttribute('data-code', p.codigo || p.tempId);
-        if (cardBorder) div.style = cardBorder;
 
         div.innerHTML = `
           <div class="card-header">
@@ -1111,7 +1241,7 @@
               <div class="card-title">${p.descripcion || '<span style="color: var(--text-muted); font-style: italic;">Sin nombre</span>'}</div>
               <span class="card-code">${p.codigo || 'Fila Nueva'}</span>
             </div>
-            <span class="badge ${badgeClass}">${badgeText} (${p.existencia})</span>
+            <span class="badge ${badgeClass}">${badgeText}</span>
           </div>
           <div class="card-body-grid">
             <div class="card-field card-field-full">
@@ -1128,7 +1258,7 @@
             </div>
             <div class="card-field card-field-full">
               <label>Existencia (Cantidad)</label>
-              <span class="card-field-val numeric-val" style="font-weight: 600;">${p.existencia}</span>
+              <span class="card-field-val numeric-val" style="font-weight: 700; font-size: 1.05rem;">${p.existencia}</span>
             </div>
           </div>
         `;
