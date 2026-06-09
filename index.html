@@ -1240,12 +1240,9 @@
       cardsBody.appendChild(fragment);
     }
 
-    // Delete confirm and execution (Desktop only)
+    // Delete execution (Desktop only) - No native alert, handled via Toast notifications
     function confirmDelete(code, desc, tempId) {
-      const displayDesc = desc || '(Producto nuevo sin guardar)';
-      if (confirm(`¿Está seguro de que desea eliminar la fila del producto "${displayDesc}"?`)) {
-        deleteProduct(code, tempId);
-      }
+      deleteProduct(code, tempId);
     }
 
     async function deleteProduct(code, tempId) {
@@ -1254,7 +1251,7 @@
         if (index !== -1) {
           products.splice(index, 1);
           applyFiltersAndRender();
-          showToast('Fila eliminada', 'success');
+          showToast('Fila vacía eliminada', 'info');
         }
         return;
       }
@@ -1274,7 +1271,7 @@
           .eq('codigo', code);
 
         if (error) throw error;
-        showToast('Producto eliminado en base de datos', 'success');
+        showToast('Producto eliminado con éxito', 'success');
       } catch (err) {
         showToast(`Error al eliminar: ${err.message}`, 'error');
         products.push(deletedProduct);
