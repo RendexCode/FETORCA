@@ -860,6 +860,25 @@
       stockFilter.addEventListener('change', () => { applyFiltersAndRender(); });
       sortSelect.addEventListener('change', () => { applyFiltersAndRender(); });
 
+      // Detect scan or keyboard typing to focus search input
+      window.addEventListener('keydown', (e) => {
+        if (e.ctrlKey || e.altKey || e.metaKey) return;
+        
+        // Focus search input when an alphanumeric key is pressed and no other input has focus
+        if (e.key.length === 1 && /^[a-zA-Z0-9]$/.test(e.key)) {
+          const activeEl = document.activeElement;
+          const isInputFocused = activeEl && (
+            activeEl.tagName === 'INPUT' || 
+            activeEl.tagName === 'SELECT' || 
+            activeEl.tagName === 'TEXTAREA'
+          );
+
+          if (!isInputFocused) {
+            searchInput.focus();
+          }
+        }
+      });
+
       // Add Empty Row
       addEmptyRowBtn.addEventListener('click', () => {
         if (activeTab !== 'faltantes') {
