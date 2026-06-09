@@ -942,9 +942,8 @@
           if (!exists) {
             e.preventDefault();
             const confirmed = await showCustomConfirm(queryCode);
+            searchInput.value = ''; // Always clear search input regardless of confirmation
             if (confirmed) {
-              searchInput.value = '';
-              
               if (activeTab !== 'faltantes') {
                 activeTab = 'faltantes';
                 document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -974,6 +973,8 @@
               }, 50);
 
               showToast('Fila creada con el código escaneado', 'success');
+            } else {
+              applyFiltersAndRender();
             }
           }
         }
