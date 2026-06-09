@@ -351,6 +351,8 @@
       flex-direction: column;
       gap: 0.75rem;
       box-shadow: var(--shadow-md);
+      position: relative; /* Required for tag positioning */
+      overflow: hidden; /* Clips tag to card border-radius */
     }
 
     .card-header {
@@ -397,12 +399,12 @@
       font-size: 0.7rem;
       color: var(--text-muted);
       text-transform: uppercase;
-      font-weight: 700;
+      font-weight: 600;
       letter-spacing: 0.5px;
     }
 
     .card-field-val {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       color: var(--text-main);
       font-weight: 500;
     }
@@ -411,31 +413,56 @@
       grid-column: span 2;
     }
 
-    /* Badges for Mobile Stock Level */
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.25rem 0.75rem;
-      border-radius: 30px;
-      font-size: 0.75rem;
-      font-weight: 700;
+    /* E-commerce corner tag stuck to the top-right corner */
+    .card-tag {
+      position: absolute;
+      top: 0;
+      right: 0;
+      padding: 0.35rem 0.85rem;
+      font-size: 0.7rem;
+      font-weight: 800;
       text-transform: uppercase;
-      white-space: nowrap;
+      color: #ffffff;
+      border-bottom-left-radius: 8px;
+      border-top-right-radius: 11px; /* fits card border-radius: 12px minus border */
+      letter-spacing: 0.5px;
+      box-shadow: -1px 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .tag-danger {
+      background-color: var(--danger);
+    }
+
+    .tag-warning {
+      background-color: var(--warning);
+    }
+
+    .tag-success {
+      background-color: var(--primary);
+    }
+
+    /* Badges for Desktop stock level */
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
     }
 
     .badge-danger {
-      background-color: var(--danger-light);
-      color: var(--danger-text);
+      background: var(--danger);
+      color: white;
     }
 
     .badge-warning {
-      background-color: var(--warning-light);
-      color: var(--warning-text);
+      background: var(--warning);
+      color: white;
     }
 
     .badge-success {
-      background-color: var(--success-light);
-      color: var(--success-text);
+      background: var(--primary);
+      color: white;
     }
 
     /* Footer & Pagination - Floating Panel */
@@ -1207,7 +1234,7 @@
       tableBody.appendChild(fragment);
     }
 
-    // Render Mobile Cards View (READ-ONLY, NO BUTTONS OR INPUTS)
+    // Render Mobile Cards View (READ-ONLY, NO BUTTONS OR INPUTS, Corner Ribbon Style Tags)
     function renderMobileCards(items) {
       cardsBody.innerHTML = '';
       
@@ -1220,14 +1247,14 @@
 
       items.forEach(p => {
         const existence = parseFloat(p.existencia);
-        let badgeClass = 'badge-success';
+        let tagClass = 'tag-success';
         let badgeText = 'Normal';
 
         if (existence === 0) {
-          badgeClass = 'badge-danger';
+          tagClass = 'tag-danger';
           badgeText = 'Faltante';
         } else if (existence <= 5) {
-          badgeClass = 'badge-warning';
+          tagClass = 'tag-warning';
           badgeText = 'Bajo Stock';
         }
 
@@ -1236,12 +1263,13 @@
         div.setAttribute('data-code', p.codigo || p.tempId);
 
         div.innerHTML = `
-          <div class="card-header">
+          <!-- Corner Ribbon style tag -->
+          <span class="card-tag ${tagClass}">${badgeText}</span>
+          <div class="card-header" style="padding-right: 5.5rem;">
             <div>
               <div class="card-title">${p.descripcion || '<span style="color: var(--text-muted); font-style: italic;">Sin nombre</span>'}</div>
               <span class="card-code">${p.codigo || 'Fila Nueva'}</span>
             </div>
-            <span class="badge ${badgeClass}">${badgeText}</span>
           </div>
           <div class="card-body-grid">
             <div class="card-field card-field-full">
