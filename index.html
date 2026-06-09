@@ -579,6 +579,62 @@
       100% { transform: rotate(360deg); }
     }
 
+    /* Custom Modal Style (No animations) */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.65); /* Slate 900 with opacity */
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1.5rem;
+    }
+
+    .modal-container {
+      background: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      max-width: 450px;
+      width: 100%;
+      padding: 1.5rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.75rem;
+    }
+
+    .modal-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .modal-body {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      border-top: 1px solid var(--border-color);
+      padding-top: 0.75rem;
+    }
+
     /* RESPONSIVE MEDIA QUERIES */
     @media (max-width: 767px) {
       body {
@@ -722,6 +778,23 @@
 
   </div>
 
+  <!-- Custom Confirm Modal -->
+  <div id="confirmModal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span class="modal-title">Código no registrado</span>
+      </div>
+      <div class="modal-body">
+        El código <strong id="modalCodeSpan" style="color: var(--text-main); font-family: monospace;"></strong> no está en la lista de productos. ¿Desea agregar una nueva fila con este código?
+      </div>
+      <div class="modal-footer">
+        <button id="modalCancelBtn" class="btn" style="border-color: #cbd5e1; background: #ffffff;">Cancelar</button>
+        <button id="modalConfirmBtn" class="btn btn-primary">Agregar Producto</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -859,7 +932,7 @@
       searchInput.addEventListener('input', () => { applyFiltersAndRender(); });
       
       // Enter on search box detects missing code from scan and prompts insertion
-      searchInput.addEventListener('keydown', (e) => {
+      searchInput.addEventListener('keydown', async (e) => {
         if (e.key === 'Enter') {
           const queryCode = searchInput.value.trim();
           if (!queryCode) return;
@@ -868,7 +941,8 @@
           
           if (!exists) {
             e.preventDefault();
-            if (confirm(`El código "${queryCode}" no está registrado. ¿Desea agregar una nueva fila con este código?`)) {
+            const confirmed = await showCustomConfirm(queryCode);
+            if (confirmed) {
               searchInput.value = '';
               
               if (activeTab !== 'faltantes') {
@@ -1398,6 +1472,38 @@
       }
       
       applyFiltersAndRender();
+    }
+
+    // Custom Confirm Modal helper using Promises
+    function showCustomConfirm(code) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('confirmModal');
+        const codeSpan = document.getElementById('modalCodeSpan');
+        const confirmBtn = document.getElementById('modalConfirmBtn');
+        const cancelBtn = document.getElementById('modalCancelBtn');
+
+        codeSpan.textContent = code;
+        modal.style.display = 'flex';
+
+        function cleanup(result) {
+          modal.style.display = 'none';
+          window.removeEventListener('keydown', handleEscape);
+          // Clone buttons to clear event listeners
+          confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+          cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+          resolve(result);
+        }
+
+        function handleEscape(e) {
+          if (e.key === 'Escape') {
+            cleanup(false);
+          }
+        }
+
+        window.addEventListener('keydown', handleEscape);
+        document.getElementById('modalConfirmBtn').addEventListener('click', () => cleanup(true));
+        document.getElementById('modalCancelBtn').addEventListener('click', () => cleanup(false));
+      });
     }
 
     // Toast Notifications helper
