@@ -90,6 +90,44 @@
       color: var(--text-muted);
     }
 
+    /* Tabs Navigation */
+    .tabs-container {
+      display: flex;
+      gap: 1.5rem;
+      border-bottom: 2px solid var(--border-color);
+      padding: 0 0.5rem;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 0.75rem 0.5rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      cursor: pointer;
+      position: relative;
+      outline: none;
+    }
+
+    .tab-btn:hover {
+      color: var(--primary);
+    }
+
+    .tab-btn.active {
+      color: var(--primary);
+    }
+
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background-color: var(--primary);
+    }
+
     /* Toolbar / Controls - Floating Premium Panel */
     .toolbar {
       background: var(--panel-bg);
@@ -598,6 +636,12 @@
       </div>
     </header>
 
+    <!-- Tabs Navigation -->
+    <div class="tabs-container">
+      <button id="tabFaltantes" class="tab-btn active" onclick="switchTab('faltantes')">Faltantes</button>
+      <button id="tabPedidos" class="tab-btn" onclick="switchTab('pedidos')">Pedidos</button>
+    </div>
+
     <!-- Toolbar Controls (SaaS style) -->
     <section class="toolbar">
       <!-- Search Bar -->
@@ -646,12 +690,13 @@
         <table id="productsTable">
           <thead>
             <tr>
-              <th style="width: 15%;">Código</th>
-              <th style="width: 35%;">Descripción</th>
-              <th style="width: 20%;">Proveedor</th>
+              <th style="width: 12%;">Código</th>
+              <th style="width: 33%;">Descripción</th>
+              <th style="width: 18%;">Proveedor</th>
               <th style="width: 10%; text-align: right;">Costo ($)</th>
               <th style="width: 10%; text-align: right;">Precio ($)</th>
               <th style="width: 10%; text-align: right;">Existencia</th>
+              <th style="width: 12%; text-align: center;">Estado</th>
               <th style="width: 5%; text-align: center;">Acción</th>
             </tr>
           </thead>
@@ -686,6 +731,7 @@
     let products = [];
     let filteredProducts = [];
     let tempIdCounter = 0;
+    let activeTab = 'faltantes';
 
     // DOM Elements
     const loadingOverlay = document.getElementById('loadingOverlay');
@@ -809,6 +855,12 @@
 
       // Add Empty Row
       addEmptyRowBtn.addEventListener('click', () => {
+        if (activeTab !== 'faltantes') {
+          activeTab = 'faltantes';
+          document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+          document.getElementById('tabFaltantes').classList.add('active');
+        }
+
         tempIdCounter++;
         const tempId = `_temp_${tempIdCounter}_${Date.now()}`;
         const newRow = {
@@ -818,6 +870,7 @@
           costo: 0,
           precio: 0,
           existencia: 0,
+          pedido: false,
           isNew: true,
           tempId: tempId
         };
@@ -978,6 +1031,13 @@
     function applyFiltersAndRender() {
       let result = [...products];
 
+      // Filter by active tab
+      if (activeTab === 'pedidos') {
+        result = result.filter(p => p.pedido === true);
+      } else {
+        result = result.filter(p => p.pedido === false || !p.pedido);
+      }
+
       const query = searchInput.value.trim().toLowerCase();
       if (query) {
         result = result.filter(p => 
@@ -1032,7 +1092,7 @@
       tableBody.innerHTML = '';
       
       if (items.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No se encontraron productos. Haz clic en "Agregar Fila" para crear uno.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">No se encontraron productos. Haz clic en "Agregar Fila" para crear uno.</td></tr>`;
         return;
       }
 
@@ -1070,6 +1130,18 @@
           </td>
           <td>
             <input type="number" step="1" min="0" class="cell-input num-input" style="text-align: right;" data-field="existencia" data-code="${key}" value="${p.existencia}">
+          </td>
+          <td style="text-align: center; vertical-align: middle; padding: 4px;">
+            ${p.isNew 
+              ? `<span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">Nuevo</span>`
+              : p.pedido 
+                ? `<button class="btn" style="padding: 0.35rem 0.6rem; font-size: 0.75rem; display: inline-flex; align-items: center; justify-content: center; gap: 4px; border: 1px solid var(--warning); color: var(--warning-text); background: var(--warning-light); border-radius: 6px; cursor: pointer; font-weight: 600; width: 100px;" onclick="togglePedido('${p.codigo}', '')">
+                     ⟲ Faltante
+                   </button>`
+                : `<button class="btn" style="padding: 0.35rem 0.6rem; font-size: 0.75rem; display: inline-flex; align-items: center; justify-content: center; gap: 4px; border: 1px solid var(--primary); color: var(--success-text); background: var(--primary-light); border-radius: 6px; cursor: pointer; font-weight: 600; width: 100px;" onclick="togglePedido('${p.codigo}', '')">
+                     ✓ Pedido
+                   </button>`
+            }
           </td>
           <td style="text-align: center;">
             <button class="delete-btn" onclick="confirmDelete('${p.codigo}', '${p.descripcion}', '${p.tempId || ''}')" title="Eliminar">
@@ -1128,7 +1200,7 @@
           </div>
 
           <!-- Row 2: Cost (Left) & Price (Right, Highlighted) -->
-          <div class="card-body-grid" style="grid-template-columns: repeat(2, 1fr); padding-top: 0.25rem;">
+          <div class="card-body-grid" style="grid-template-columns: repeat(2, 1fr); padding-top: 0.25rem; border-bottom: ${p.isNew ? 'none' : '1px solid #f1f5f9'}; padding-bottom: 0.5rem;">
             <div class="card-field">
               <label>Costo</label>
               <span class="card-field-val numeric-val">$${parseFloat(p.costo || 0).toFixed(2)}</span>
@@ -1138,6 +1210,21 @@
               <span class="card-field-val numeric-val" style="font-weight: 600; color: var(--primary);">$${parseFloat(p.precio || 0).toFixed(2)}</span>
             </div>
           </div>
+
+          <!-- Action Button for mobile -->
+          ${p.isNew 
+            ? '' 
+            : `<div class="card-action" style="padding-top: 0.25rem;">
+                ${p.pedido 
+                  ? `<button class="btn" style="width: 100%; justify-content: center; padding: 0.45rem; font-size: 0.8rem; font-weight: 600; border: 1px solid var(--warning); color: var(--warning-text); background: var(--warning-light); display: inline-flex; align-items: center; gap: 4px; cursor: pointer; border-radius: 6px;" onclick="togglePedido('${p.codigo}', '')">
+                       ⟲ Mandar a Faltante
+                     </button>`
+                  : `<button class="btn" style="width: 100%; justify-content: center; padding: 0.45rem; font-size: 0.8rem; font-weight: 600; border: 1px solid var(--primary); color: var(--success-text); background: var(--primary-light); display: inline-flex; align-items: center; gap: 4px; cursor: pointer; border-radius: 6px;" onclick="togglePedido('${p.codigo}', '')">
+                       ✓ Marcar como Pedido
+                     </button>`
+                }
+               </div>`
+          }
         `;
 
         fragment.appendChild(div);
@@ -1186,6 +1273,55 @@
         products.push(deletedProduct);
         applyFiltersAndRender();
       }
+    }
+
+    // Toggle Pedido state
+    async function togglePedido(code, tempId) {
+      const product = products.find(p => p.codigo === code || (tempId && p.tempId === tempId));
+      if (!product) return;
+
+      if (product.isNew) {
+        showToast('Guarde el producto antes de cambiar su estado', 'warning');
+        return;
+      }
+
+      const newPedidoState = !product.pedido;
+      product.pedido = newPedidoState;
+
+      try {
+        const { error } = await supabaseClient
+          .from('productos')
+          .update({ pedido: newPedidoState })
+          .eq('codigo', product.codigo);
+
+        if (error) throw error;
+
+        showToast(
+          newPedidoState ? 'Producto marcado como Pedido' : 'Producto devuelto a Faltantes',
+          'success'
+        );
+
+        applyFiltersAndRender();
+      } catch (err) {
+        showToast(`Error al actualizar estado: ${err.message}`, 'error');
+        product.pedido = !newPedidoState;
+        applyFiltersAndRender();
+      }
+    }
+
+    // Switch active tab
+    function switchTab(tabName) {
+      if (activeTab === tabName) return;
+      activeTab = tabName;
+      
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      if (tabName === 'faltantes') {
+        document.getElementById('tabFaltantes').classList.add('active');
+      } else {
+        document.getElementById('tabPedidos').classList.add('active');
+      }
+      
+      applyFiltersAndRender();
     }
 
     // Toast Notifications helper
