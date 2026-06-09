@@ -346,53 +346,31 @@
       background: #ffffff;
       border: 1px solid var(--border-color);
       border-radius: 12px;
-      padding: 1rem 1.25rem;
+      padding: 1rem 1.25rem 0.85rem 1.25rem;
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 0.5rem;
       box-shadow: var(--shadow-md);
       position: relative; /* Required for tag positioning */
       overflow: hidden; /* Clips tag to card border-radius */
-    }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 0.5rem;
-      border-bottom: 1px solid #f1f5f9;
-      padding-bottom: 0.65rem;
     }
 
     .card-title {
       font-weight: 700;
       font-size: 1rem;
       color: var(--text-main);
-      line-height: 1.3;
-    }
-
-    .card-code {
-      font-family: monospace;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      background: #f1f5f9;
-      padding: 3px 8px;
-      border-radius: 4px;
-      display: inline-block;
-      margin-top: 6px;
-      font-weight: 500;
+      line-height: 1.35;
     }
 
     .card-body-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
       gap: 0.75rem;
     }
 
     .card-field {
       display: flex;
       flex-direction: column;
-      gap: 0.2rem;
+      gap: 0.15rem;
     }
 
     .card-field label {
@@ -409,24 +387,33 @@
       font-weight: 500;
     }
 
-    .card-field-full {
-      grid-column: span 2;
-    }
-
-    /* E-commerce corner tag stuck to the top-right corner */
+    /* E-commerce corner tags stuck to the top-right / top-left corners */
     .card-tag {
       position: absolute;
       top: 0;
-      right: 0;
       padding: 0.35rem 0.85rem;
       font-size: 0.7rem;
       font-weight: 800;
       text-transform: uppercase;
       color: #ffffff;
+      letter-spacing: 0.5px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Right Stock Tag */
+    .tag-right {
+      right: 0;
       border-bottom-left-radius: 8px;
       border-top-right-radius: 11px; /* fits card border-radius: 12px minus border */
-      letter-spacing: 0.5px;
-      box-shadow: -1px 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Left Code Tag */
+    .tag-left {
+      left: 0;
+      background-color: #334155; /* Slate 700 */
+      border-bottom-right-radius: 8px;
+      border-top-left-radius: 11px; /* fits card border-radius: 12px minus border */
+      font-family: monospace;
     }
 
     .tag-danger {
@@ -463,6 +450,12 @@
     .badge-success {
       background: var(--primary);
       color: white;
+    }
+
+    /* Font styling for numeric fields */
+    .numeric-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
     }
 
     /* Footer & Pagination - Floating Panel */
@@ -1234,7 +1227,7 @@
       tableBody.appendChild(fragment);
     }
 
-    // Render Mobile Cards View (READ-ONLY, NO BUTTONS OR INPUTS, Corner Ribbon Style Tags)
+    // Render Mobile Cards View (READ-ONLY, Symmetrical ribbons, description & stock on row 1, cost & price on row 2)
     function renderMobileCards(items) {
       cardsBody.innerHTML = '';
       
@@ -1263,30 +1256,29 @@
         div.setAttribute('data-code', p.codigo || p.tempId);
 
         div.innerHTML = `
-          <!-- Corner Ribbon style tag -->
-          <span class="card-tag ${tagClass}">${badgeText}</span>
-          <div class="card-header" style="padding-right: 5.5rem;">
-            <div>
-              <div class="card-title">${p.descripcion || '<span style="color: var(--text-muted); font-style: italic;">Sin nombre</span>'}</div>
-              <span class="card-code">${p.codigo || 'Fila Nueva'}</span>
+          <!-- Left Ribbon for Product Code -->
+          <span class="card-tag tag-left">${p.codigo || 'Nueva'}</span>
+          <!-- Right Ribbon for Stock Level Status -->
+          <span class="card-tag tag-right ${tagClass}">${badgeText}</span>
+
+          <!-- Row 1: Description (Left) & Existence (Right) -->
+          <div class="card-row-top" style="margin-top: 1.35rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.65rem;">
+            <div class="card-title" style="flex: 1;">${p.descripcion || '<span style="color: var(--text-muted); font-style: italic;">Sin nombre</span>'}</div>
+            <div class="card-field" style="text-align: right; min-width: 80px;">
+              <label>Existencia</label>
+              <span class="card-field-val numeric-val" style="font-weight: 700; font-size: 1.15rem; color: var(--text-main);">${p.existencia}</span>
             </div>
           </div>
-          <div class="card-body-grid">
-            <div class="card-field card-field-full">
-              <label>Proveedor</label>
-              <span class="card-field-val">${p.proveedor || '<span style="color: var(--text-muted); font-style: italic;">Sin asignar</span>'}</span>
-            </div>
+
+          <!-- Row 2: Cost (Left) & Price (Right, Highlighted) -->
+          <div class="card-body-grid" style="grid-template-columns: repeat(2, 1fr); padding-top: 0.25rem;">
             <div class="card-field">
-              <label>Costo ($)</label>
-              <span class="card-field-val numeric-val">${parseFloat(p.costo || 0).toFixed(2)}</span>
+              <label>Costo</label>
+              <span class="card-field-val numeric-val">$${parseFloat(p.costo || 0).toFixed(2)}</span>
             </div>
-            <div class="card-field">
-              <label>Precio ($)</label>
-              <span class="card-field-val numeric-val">${parseFloat(p.precio || 0).toFixed(2)}</span>
-            </div>
-            <div class="card-field card-field-full">
-              <label>Existencia (Cantidad)</label>
-              <span class="card-field-val numeric-val" style="font-weight: 700; font-size: 1.05rem;">${p.existencia}</span>
+            <div class="card-field" style="text-align: right;">
+              <label>Precio</label>
+              <span class="card-field-val numeric-val" style="font-weight: 600; color: var(--primary);">$${parseFloat(p.precio || 0).toFixed(2)}</span>
             </div>
           </div>
         `;
